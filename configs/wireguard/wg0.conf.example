@@ -1,0 +1,18 @@
+[Interface]
+PrivateKey = AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=
+Address = 10.8.0.2/32
+DNS = 1.1.1.1,1.0.0.1
+# kill-switch: only the tunnel interface may leave (see filter.dfl killswitch)
+PostUp = iptables -I OUTPUT ! -o %i -m mark ! --mark $(wg show %i fwmark) -j REJECT; ip6tables -I OUTPUT ! -o %i -m mark ! --mark $(wg show %i fwmark) -j REJECT
+PreUp = ip rule add fwmark $(wg show %i fwmark) table 51820 >/dev/null 2>&1 || true
+PreUp = ip route add table 51820 default dev %i >/dev/null 2>&1 || true
+PostDown = iptables -D OUTPUT ! -o %i -m mark ! --mark $(wg show %i fwmark) -j REJECT; ip6tables -D OUTPUT ! -o %i -m mark ! --mark $(wg show %i fwmark) -j REJECT; ip rule del table 51820 2>/dev/null || true; ip route del table 51820 2>/dev/null || true
+
+
+[Peer]
+PublicKey = CQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQk=
+AllowedIPs = 0.0.0.0/0, ::/0
+Endpoint = test-gw.example.com:51820
+PersistentKeepalive = 25
+MTU = 1420
+

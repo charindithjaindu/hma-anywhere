@@ -1,0 +1,40 @@
+# strongSwan swanctl configuration — load with:  sudo swanctl --load-all
+connections {
+    hma {
+        version = 2
+        local_addrs = %any
+        remote_addrs = test-gw.example.com
+
+        local {
+            auth = eap-mschapv2
+            eap_id = test@example.com
+        }
+        remote {
+            auth = pubkey
+            id = test-gw.example.com
+        }
+        children {
+            hma-child {
+                local_ts = 0.0.0.0/0, ::/0
+                remote_ts = 0.0.0.0/0, ::/0
+                esp_proposals = aes256gcm16-prfsha256-modp2048
+                dpd_action = restart
+                start_action = none   # set to 'start' for connect-on-boot
+            }
+        }
+        proposals = aes256-sha256-modp2048
+        dpd_delay = 30s
+        dpd_timeout = 120s
+        mobike = yes
+        rekey_time = 0s
+        reauth_time = 0s
+        fragmentation = yes
+    }
+}
+
+secrets {
+    eap-hma {
+        id = test@example.com
+        secret = "dummy-pass-123"
+    }
+}

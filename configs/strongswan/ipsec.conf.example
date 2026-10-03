@@ -1,0 +1,17 @@
+# legacy ipsec.conf (ipsec/starter) — /etc/ipsec.conf
+conn hma
+    keyexchange=ikev2
+    type=tunnel
+    left=%defaultroute
+    leftsourceip=%config
+    leftauth=eap-mschapv2
+    eap_identity=test@example.com
+    right=test-gw.example.com
+    rightid=test-gw.example.com
+    rightauth=pubkey
+    ike=aes256-sha256-modp2048!
+    esp=aes256gcm16-modp2048!
+    dpddelay=30
+    dpdtimeout=120
+    dpdaction=restart
+    auto=add
