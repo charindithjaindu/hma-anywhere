@@ -1,4 +1,9 @@
-# VM setup guide
+# VM setup guide (per-OS details)
+
+> **Start with [GETTING-STARTED.md](GETTING-STARTED.md)** — it covers the
+> whole flow end-to-end. This page is the deeper per-OS reference (strongSwan
+> package names, native clients, legacy ipsec) kept for the IKEv2/WireGuard
+> paths and older systems.
 
 All tools are Python 3.8+ stdlib only — no pip needed. Copy the `suite/`
 folder into the VM however you like (shared folder, scp, USB).

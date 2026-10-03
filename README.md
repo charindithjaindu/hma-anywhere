@@ -1,82 +1,140 @@
-# hma-suite — use HMA's tunnel infrastructure externally
+# hma-suite
 
-Built from the reverse engineering of `hma_vpn_online.dmg` (HMA VPN 26.8.0,
-macOS) — see `docs/RE-REPORT.md`. The suite turns that knowledge into
-tools you can run inside your own VM.
+**Use your own HMA VPN subscription from a Linux VM or VPS — through standard
+protocols (IKEv2 / WireGuard / OpenVPN), exposed to your apps as local
+SOCKS5/HTTP proxies, with per-country server selection and IP rotation.**
 
-**What it is:** discovery + probing of HMA's infrastructure, and generators
-for the two *standard* protocols the HMA client speaks (IKEv2 and WireGuard),
-so you can connect from Linux/Windows/macOS VMs with your own HMA account.
+Built by reverse engineering the official HMA VPN 26.8.0 client for macOS
+([full technical report](docs/RE-REPORT.md)). Everything here works with
+**your own account and your own credentials** — nothing bypasses HMA's
+authentication; it simply speaks the same protocols their client does, in
+places their client doesn't run.
 
-**What it is not:** a credential bypass. The DMG contains no static VPN
-configs — tunnel endpoints and keys are issued per-account by HMA's backend
-after login (verified during the RE). Use your own credentials/session.
-Bypassing or sharing credentials would violate HMA's terms; connecting with
-your own account via a standard protocol is ordinary interoperability.
+---
 
-## Quick start (in the VM)
+## What is this?
+
+HMA's desktop apps exist for macOS/Windows/iOS/Android, and their Linux
+support is manual config files. This suite fills the gap for servers and
+VMs:
+
+```
+your apps (on a VM/VPS)
+   │  point at 127.0.0.1 — nothing else to configure
+   ▼
+┌─────────────────────────────────────────────────┐
+│  VPS                                            │
+│   SOCKS5 :1080 ─┐                               │
+│   HTTP   :8888 ─┤ dante/tinyproxy               │
+│                 │ pinned to the tunnel (fail-    │
+│                 ▼ closed: no leak if VPN drops) │
+│           HMA tunnel  ────▶  <CC>.ult.surfeasy.mobi
+└─────────────────────────────────────────────────┘
+   egress = HMA gateway, country of your choice
+```
+
+- **Choose your country** — switch anytime, proxies stay up
+  (`select-country.sh JP`)
+- **Rotate your exit IP** — verified reconnection, same country
+  (`rotate.sh`)
+- **Self-healing** — a systemd watchdog restarts the tunnel/proxies if they
+  die; everything survives reboots
+
+## What you need
+
+| You have | What to do |
+|---|---|
+| Activation key only | Redeem it once (browser or one command) — see [Getting started](docs/GETTING-STARTED.md#step-1-activate-your-subscription) |
+| Active HMA subscription | Skip straight to the VM setup |
+| Nothing yet | This toolkit can't help — it's not a VPN provider 🙂 |
+
+Two things are **deliberately manual** (both are behind HMA's own login, and
+this project doesn't scrape authenticated web portals):
+1. redeeming an activation code the first time (browser or one command on a
+   machine with the HMA app), and
+2. downloading the per-country OpenVPN configs from your HMA dashboard.
+
+Everything after that is one command.
+
+## Quick start
+
+On a Debian/Ubuntu VM or VPS:
 
 ```bash
-# one-shot bootstrap: packages, routing, license check, tunnel, proxies, watchdog
-sudo vps/bootstrap.sh --countries US,GB --wallet-key XXXXXX-XXXXXX-XXXXXX
-# (see vps/VPS-GUIDE.md — code redemption + config download are the two manual steps)
-# 0. account/licensing — use your own install's wallet key (tested live)
-python3 bin/hma_account.py status                     # local install -> live license
-python3 bin/hma_account.py licenses --wallet-key XXXXXX-XXXXXX-XXXXXX
-python3 bin/hma_account.py activate --code XXXXX-XXXXX-XXXXX   # redeem a key
-python3 bin/hma_account.py login --email you@example.com       # all licenses
+# 1. clone
+git clone https://github.com/charindithjaindu/hma-suite.git
+cd hma-suite/vps
 
-# 1. see what's reachable & where you egress from (no credentials needed)
-python3 bin/hma_discover.py --json report.json
+# 2. drop your per-country configs in place (from your HMA dashboard)
+#    /etc/openvpn/hma/US.conf  GB.conf  DE.conf ...
 
-# 2. the practical path — IKEv2 with your HMA credentials
-python3 bin/hma_ikev2.py --server GATEWAY --username you@example.com --out hma-out
-#    → strongSwan / Apple .mobileconfig / Windows profiles, ready to load
+# 3. one command: packages + routing + proxies + tunnel + watchdog
+sudo ./bootstrap.sh --countries US,GB
 
-# 3. WireGuard path (when you have keys from your own provisioned session)
-python3 bin/hma_wg.py --gen-keypair
-python3 bin/hma_wg.py --endpoint GW:51820 --peer-pub SRVPUB \
-                      --client-priv YOURPRIV --firewall --out wg0.conf
-
-# 4. validate any endpoint before using it
-python3 bin/hma_probe.py --tcp GATEWAY --ports 443,51820
-python3 bin/hma_probe.py --ike  GATEWAY            # IKE_SA_INIT responder check
+# 4. point your apps at localhost — done
+export http_proxy=http://danteproxy:PASSWORD@127.0.0.1:8888
+export https_proxy=$http_proxy
 ```
 
-Full walkthrough: `docs/VM-SETUP.md`. Protocol-by-protocol reasoning:
-`docs/PROTOCOLS.md`.
+Then, whenever you feel like it:
 
-## Tools
-
-| Tool | Purpose | Network calls |
-|---|---|---|
-| `hma_discover.py` | NOS SRV bootstrap, geo check, host inventory, TCP probes | unauthenticated only (same as client pre-login) |
-| `hma_probe.py` | TCP reachability + minimal IKEv2 `IKE_SA_INIT` responder probe | none (raw sockets to your target) |
-| `hma_ikev2.py` | strongSwan swanctl/legacy, Apple `.mobileconfig`, Windows PS | none |
-| `hma_wg.py` | `wg-quick` config assembly, X25519 keypair generation (RFC 7748, stdlib) | none |
-| `hma_account.py` | license status/queries with your own WalletKey, activation-code redemption, email login | Vaar-headered HTTPS to HMA licensing (same calls the client makes) |
-
-## Files
-
-```
-suite/
-├── README.md            ← you are here
-├── bin/                 ← the five tools (stdlib-only, Python 3.8+)
-├── configs/             ← reference templates the generators emit
-├── vps/                 ← VPS-as-proxy kit (setup scripts + VPS-GUIDE.md)
-└── docs/
-    ├── PROTOCOLS.md     ← IKEv2 / WireGuard / Mimic capability map
-    ├── ACCOUNTS.md      ← licensing & activation flows (tested live)
-    ├── VM-SETUP.md      ← per-OS walkthroughs + troubleshooting
-    └── MIMIC.md         ← roadmap for reimplementing Avast's Mimic protocol
+```bash
+sudo ./select-country.sh JP    # move egress to Japan (~5 s, proxies untouched)
+sudo ./rotate.sh               # new exit IP, same country
+./check-egress.sh              # prove where you're egressing from
 ```
 
-## Notes
+Full walkthrough (including the activation-key-only path):
+**[docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)**.
 
-- `hma_wg.py --gen-keypair` uses a self-contained X25519 implementation
-  (verified against RFC 7748 test vectors); keys never leave the VM.
-- `hma_ikev2.py` embeds your password in the generated files only if you pass
-  it; the secrets files are written `0600` and should stay on the VM.
-- The IKE prober sends a single well-formed IKE_SA_INIT; any reply (even a
-  NO_PROPOSAL notification) proves a responder. Timeouts are inconclusive —
-  many networks filter outbound UDP 500/4500.
+## What's in the box
+
+```
+bin/                     Python 3.8+ tools, stdlib only, no dependencies
+  hma_account.py         license status/verification, activation, login
+  hma_discover.py        infrastructure discovery + geo check (no credentials)
+  hma_probe.py           TCP + IKEv2 responder probes for gateways
+  hma_ikev2.py           IKEv2 profile generator (strongSwan/Apple/Windows)
+  hma_wg.py              WireGuard config generator + X25519 keypair tool
+vps/                     the VPS kit (bash)
+  bootstrap.sh           one-command setup, resume-safe
+  setup-proxy.sh         SOCKS5 + HTTP proxies, fail-closed to the tunnel
+  select-country.sh      country switcher
+  rotate.sh              exit-IP rotation with change verification
+  setup-netrules.sh      SSH-survival routing under a full tunnel
+  check-egress.sh        egress IP/geo verification
+configs/                 reference output examples
+```
+
+## Documentation
+
+| Doc | Read it for |
+|---|---|
+| [Getting started](docs/GETTING-STARTED.md) | **start here** — activation key to working proxy, step by step |
+| [Tools reference](docs/TOOLS.md) | every command, flag and example |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | when something doesn't work |
+| [VPS guide](vps/VPS-GUIDE.md) | the proxy architecture in depth |
+| [Protocols](docs/PROTOCOLS.md) | which HMA protocols work externally and why |
+| [Accounts & licensing](docs/ACCOUNTS.md) | how the licensing plane works (tested live) |
+| [RE report](docs/RE-REPORT.md) | the full reverse-engineering write-up |
+| [Mimic roadmap](docs/MIMIC.md) | reimplementing HMA's proprietary protocol |
+
+## Responsible use
+
+- **Your subscription, your credentials.** The tools authenticate as you and
+  count against your device slots (typically 5). Don't share keys or tokens.
+- Not affiliated with HMA, Privax, or Gen Digital. This is independent
+  interoperability research and tooling; HMA's terms of service still apply
+  to how you use their service.
+- Don't expose the proxies to the internet — they bind to localhost by
+  default for a reason. An open proxy gets abused within minutes.
+- Provided as-is for personal use; you're responsible for compliance with
+  your VPN provider's terms and your local laws.
+
+## Status
+
+- License-plane APIs: **tested live** against production (see
+  [ACCOUNTS.md](docs/ACCOUNTS.md))
+- Tunnel paths: IKEv2 + WireGuard + OpenVPN configs (HMA's official Linux path)
+- Mimic (HMA's proprietary protocol): documented, not reimplemented —
+  [roadmap](docs/MIMIC.md)

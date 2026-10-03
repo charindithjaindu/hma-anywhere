@@ -1,5 +1,9 @@
 # HMA-as-a-proxy on a VPS — for apps running on the VM, with country selection
 
+> New here? The friendly path is [GETTING-STARTED](../docs/GETTING-STARTED.md)
+> and the command reference is [TOOLS](../docs/TOOLS.md). This page explains
+> the architecture and the details behind each step.
+
 Goal: apps on your VPS point their proxy settings at **localhost ports**; that
 traffic exits through an HMA tunnel in the **country you choose**.
 
