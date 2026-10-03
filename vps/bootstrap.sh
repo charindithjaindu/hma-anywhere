@@ -55,22 +55,28 @@ if [ -n "$CODE" ]; then
   if python3 "$ACC" activate --code "$CODE" ${WALLET_KEY:+--wallet-key "$WALLET_KEY"}; then
     ACTIVATED=yes
   else
-    echo "NOTE: code redemption needs HMA installed (protobuf codec) — redeem ONCE at"
-    echo "      https://my.hma.com (Account -> redeem code) or on your Mac:"
-    echo "        python3 bin/hma_account.py activate --code $CODE"
-    echo "      ...then re-run bootstrap with --wallet-key to verify. Continuing."
+    cat <<EOF
+This VM can't redeem the code directly (protobuf-only API). One-time options:
+  a) https://my.hma.com -> Account -> redeem code          (browser, 2 min)
+  b) a machine with HMA installed:
+       python3 bin/hma_account.py activate --code $CODE
+Redemption binds the subscription to your HMA account. The VM itself then
+only needs the account credentials (auth-user-pass) — no key required here.
+Continuing with tunnel setup; run bootstrap again later to verify.
+EOF
   fi
 fi
-if [ "$ACTIVATED" = no ] && [ -n "$WALLET_KEY" ]; then
+if [ -n "$WALLET_KEY" ]; then
   echo "verifying license with wallet key (raw HTTP):"
   python3 "$ACC" licenses --wallet-key "$WALLET_KEY" || {
     echo "WARNING: license query failed — check the wallet key / connectivity." >&2
   }
 fi
-if [ "$ACTIVATED" = no ] && [ -z "$WALLET_KEY" ]; then
+if [ "$ACTIVATED" = no ] && [ -z "$WALLET_KEY" ] && [ -z "$CODE" ]; then
   cat <<'EOF'
-No activation/verification performed. The tunnel below uses your HMA account
-credentials (auth-user-pass) regardless; the license check is informational.
+No license verification requested (fine). The tunnel below uses your HMA
+account credentials (auth-user-pass); the subscription must be active on
+your HMA account (i.e., the activation key already redeemed once).
 EOF
 fi
 
@@ -173,5 +179,7 @@ Use in apps on this VM (password: $PROXY_PASS — store it somewhere safe):
   # or per-app SOCKS5: socks5h://$USER_NAME:$PROXY_PASS@127.0.0.1:1080
 
 Switch countries anytime:   sudo $HERE/select-country.sh <CC>
+Rotate exit IP (same cc):   sudo $HERE/rotate.sh
+What country am I on:       $HERE/select-country.sh current
 Check egress:               $HERE/check-egress.sh
 EOF
