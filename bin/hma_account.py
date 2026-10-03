@@ -166,8 +166,11 @@ def cmd_activate(args):
     """Redeem an activation code via the installed alphacli (protobuf codec)."""
     cli = os.path.join(INSTALL_UTILS, "com.privax.osx.provpn.alphacli")
     if not os.path.exists(cli):
-        print("alphacli not found — activation needs HMA installed on this machine.")
-        print("(the HTTP API /v2/analyze|/v2/activate is protobuf-only; CLI is the codec)")
+        print("alphacli not found on this machine — code redemption is protobuf-only,")
+        print("so redeem your activation code ONCE via either:")
+        print("  1. https://my.hma.com  ->  Account  ->  redeem/activate code   (official)")
+        print("  2. a machine with HMA installed:  python3 bin/hma_account.py activate --code ...")
+        print("Then verify from here:  hma_account.py licenses --wallet-key XXXXXX-XXXXXX-XXXXXX")
         return 1
     cmd = [cli, "-c", args.code]
     wk = args.wallet_key or local_wallet_key()

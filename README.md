@@ -17,6 +17,9 @@ your own account via a standard protocol is ordinary interoperability.
 ## Quick start (in the VM)
 
 ```bash
+# one-shot bootstrap: packages, routing, license check, tunnel, proxies, watchdog
+sudo vps/bootstrap.sh --countries US,GB --wallet-key XXXXXX-XXXXXX-XXXXXX
+# (see vps/VPS-GUIDE.md — code redemption + config download are the two manual steps)
 # 0. account/licensing — use your own install's wallet key (tested live)
 python3 bin/hma_account.py status                     # local install -> live license
 python3 bin/hma_account.py licenses --wallet-key XXXXXX-XXXXXX-XXXXXX
