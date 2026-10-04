@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Shell syntax check
+        run: |
+          for f in vps/*.sh; do
+            bash -n "$f" && echo "OK  $f"
+          done
+
+      - name: Python compile check
+        run: python3 -m py_compile bin/*.py
+
+      - name: Smoke test (CLI help)
+        run: |
+          for t in bin/*.py; do
+            python3 "$t" --help > /dev/null && echo "OK  $t"
+          done
+
+      - name: Unit tests (crypto + generators)
+        run: python3 tests/test_suite.py

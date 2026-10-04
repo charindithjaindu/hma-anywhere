@@ -88,9 +88,9 @@ MOBILECONFIG = """<?xml version="1.0" encoding="UTF-8"?>
       <key>PayloadDisplayName</key>
       <string>{name} VPN (IKEv2)</string>
       <key>PayloadIdentifier</key>
-      <string>local.hma-suite.ikev2.{name}</string>
+      <string>local.hma-anywhere.ikev2.{name}</string>
       <key>PayloadOrganization</key>
-      <string>hma-suite</string>
+      <string>hma-anywhere</string>
       <key>PayloadType</key>
       <string>com.apple.vpn.managed</string>
       <key>PayloadUUID</key>
@@ -104,7 +104,7 @@ MOBILECONFIG = """<?xml version="1.0" encoding="UTF-8"?>
   <key>PayloadDisplayName</key>
   <string>{name} VPN (IKEv2)</string>
   <key>PayloadIdentifier</key>
-  <string>local.hma-suite.ikev2.{name}.top</string>
+  <string>local.hma-anywhere.ikev2.{name}.top</string>
   <key>PayloadRemovalDisallowed</key>
   <false/>
   <key>PayloadType</key>

@@ -169,7 +169,7 @@ def tcp_probe(host, port, timeout=3.0):
         s.close()
 
 def geo_check(timeout=6.0):
-    req = urllib.request.Request(GEO_URL, headers={"User-Agent": "hma-suite/1.0"})
+    req = urllib.request.Request(GEO_URL, headers={"User-Agent": "hma-anywhere/1.0"})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             data = json.loads(r.read().decode())

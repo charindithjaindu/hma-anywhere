@@ -18,7 +18,7 @@ provider's console:
 
 ```bash
 sudo ip rule del from <VPS_PUBLIC_IP> lookup 200 2>/dev/null
-sudo /usr/local/sbin/hma-netrules     # or: sudo hma-suite/vps/setup-netrules.sh
+sudo /usr/local/sbin/hma-netrules     # or: sudo hma-anywhere/vps/setup-netrules.sh
 ```
 
 Prevention: run `setup-netrules.sh` **before** the first tunnel start; it's

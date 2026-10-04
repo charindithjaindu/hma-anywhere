@@ -1,4 +1,9 @@
-# hma-suite
+# hma-anywhere
+
+![CI](https://github.com/charindithjaindu/hma-anywhere/actions/workflows/ci.yml/badge.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)
+![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macOS-lightgrey.svg)
 
 **Use your own HMA VPN subscription from a Linux VM or VPS — through standard
 protocols (IKEv2 / WireGuard / OpenVPN), exposed to your apps as local
@@ -62,8 +67,8 @@ On a Debian/Ubuntu VM or VPS:
 
 ```bash
 # 1. clone
-git clone https://github.com/charindithjaindu/hma-suite.git
-cd hma-suite/vps
+git clone https://github.com/charindithjaindu/hma-anywhere.git
+cd hma-anywhere/vps
 
 # 2. drop your per-country configs in place (from your HMA dashboard)
 #    /etc/openvpn/hma/US.conf  GB.conf  DE.conf ...

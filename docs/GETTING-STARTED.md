@@ -33,8 +33,8 @@ Pick whichever is easier:
 **Option B — one command, on a machine that has the HMA app installed
 (e.g. your Mac):**
 ```bash
-git clone https://github.com/charindithjaindu/hma-suite.git
-cd hma-suite
+git clone https://github.com/charindithjaindu/hma-anywhere.git
+cd hma-anywhere
 python3 bin/hma_account.py activate --code XXXXX-XXXXX-XXXXX-XXXXX
 ```
 
@@ -75,8 +75,8 @@ sudo sh -c 'printf "YOUR_HMA_EMAIL\nYOUR_HMA_PASSWORD\n" > /etc/openvpn/hma/hma.
 ## Step 3 — Bootstrap the VM
 
 ```bash
-git clone https://github.com/charindithjaindu/hma-suite.git
-cd hma-suite/vps
+git clone https://github.com/charindithjaindu/hma-anywhere.git
+cd hma-anywhere/vps
 sudo ./bootstrap.sh --countries US,GB
 ```
 
